@@ -15,7 +15,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         MediaPlayer.OnPreparedListener{
 
 
-    public String videoPath = Environment.getExternalStorageDirectory().getPath()+"/aoa.mkv";
+    public String videoPath = Environment.getExternalStorageDirectory().getPath()+"/播播one.mp4";
     private TextureView textureView;
     private MediaPlayer mediaPlayer;
 
