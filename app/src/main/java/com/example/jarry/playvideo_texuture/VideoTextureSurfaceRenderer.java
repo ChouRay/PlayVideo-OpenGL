@@ -25,12 +25,12 @@ public class VideoTextureSurfaceRenderer extends TextureSurfaceRenderer implemen
     /**
      *
      */
-    private static float squareSize = 0.5f;
+    private static float squareSize = 1.0f;
     private static float squareCoords[] = {
-            -squareSize,  squareSize, 0.0f,   // top left
-            -squareSize, -squareSize, 0.0f,   // bottom left
-            squareSize, -squareSize, 0.0f,   // bottom right
-            squareSize,  squareSize, 0.0f }; // top right
+            -squareSize,  squareSize,   // top left
+            -squareSize, -squareSize,   // bottom left
+            squareSize, -squareSize,    // bottom right
+            squareSize,  squareSize }; // top right
 
     private static short drawOrder[] = { 0, 1, 2, 0, 2, 3};
 
@@ -59,8 +59,6 @@ public class VideoTextureSurfaceRenderer extends TextureSurfaceRenderer implemen
         super(texture, width, height);
         this.context = context;
         videoTextureTransform = new float[16];
-        surfaceTexture = new SurfaceTexture(textures[0]);
-        surfaceTexture.setOnFrameAvailableListener(this);
     }
 
     private void loadShaders()
@@ -150,9 +148,9 @@ public class VideoTextureSurfaceRenderer extends TextureSurfaceRenderer implemen
         int textureTranformHandle = GLES20.glGetUniformLocation(shaderProgram, "textureTransform");
 
         GLES20.glEnableVertexAttribArray(positionHandle);
-        GLES20.glVertexAttribPointer(positionHandle, 3, GLES20.GL_FLOAT, false, 4 * 3, vertexBuffer);
+        GLES20.glVertexAttribPointer(positionHandle, 2, GLES20.GL_FLOAT, false, 0, vertexBuffer);
 
-        GLES20.glBindTexture(GLES20.GL_TEXTURE0, textures[0]);
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textures[0]);
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glUniform1i(textureParamHandle, 0);
 
@@ -161,7 +159,7 @@ public class VideoTextureSurfaceRenderer extends TextureSurfaceRenderer implemen
 
         GLES20.glUniformMatrix4fv(textureTranformHandle, 1, false, videoTextureTransform, 0);
 
-        GLES20.glDrawElements(GLES20.GL_TRIANGLES, drawOrder.length, GLES20.GL_UNSIGNED_SHORT, drawListBuffer);
+        GLES20.glDrawElements(GLES20.GL_TRIANGLE_STRIP, drawOrder.length, GLES20.GL_UNSIGNED_SHORT, drawListBuffer);
         GLES20.glDisableVertexAttribArray(positionHandle);
         GLES20.glDisableVertexAttribArray(textureCoordinateHandle);
     }
