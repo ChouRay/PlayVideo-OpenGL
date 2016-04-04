@@ -53,6 +53,11 @@ public class VideoTextureSurfaceRenderer extends TextureSurfaceRenderer implemen
     private float[] videoTextureTransform;
     private boolean frameAvailable = false;
 
+    int textureParamHandle;
+    int textureCoordinateHandle;
+    int positionHandle;
+    int textureTranformHandle;
+
 
     public VideoTextureSurfaceRenderer(Context context, SurfaceTexture texture, int width, int height)
     {
@@ -61,7 +66,7 @@ public class VideoTextureSurfaceRenderer extends TextureSurfaceRenderer implemen
         videoTextureTransform = new float[16];
     }
 
-    private void loadShaders()
+    private void setupGraphics()
     {
         final String vertexShader = RawResourceReader.readTextFileFromRawResource(context, R.raw.vetext_sharder);
         final String fragmentShader = RawResourceReader.readTextFileFromRawResource(context, R.raw.fragment_sharder);
@@ -70,6 +75,12 @@ public class VideoTextureSurfaceRenderer extends TextureSurfaceRenderer implemen
         final int fragmentShaderHandle = ShaderHelper.compileShader(GLES20.GL_FRAGMENT_SHADER, fragmentShader);
         shaderProgram = ShaderHelper.createAndLinkProgram(vertexShaderHandle, fragmentShaderHandle,
                 new String[]{"texture","vPosition","vTexCoordinate","textureTransform"});
+
+        GLES20.glUseProgram(shaderProgram);
+        textureParamHandle = GLES20.glGetUniformLocation(shaderProgram, "texture");
+        textureCoordinateHandle = GLES20.glGetAttribLocation(shaderProgram, "vTexCoordinate");
+        positionHandle = GLES20.glGetAttribLocation(shaderProgram, "vPosition");
+        textureTranformHandle = GLES20.glGetUniformLocation(shaderProgram, "textureTransform");
     }
 
     private void setupVertexBuffer()
@@ -139,11 +150,6 @@ public class VideoTextureSurfaceRenderer extends TextureSurfaceRenderer implemen
 
     private void drawTexture() {
         // Draw texture
-        GLES20.glUseProgram(shaderProgram);
-        int textureParamHandle = GLES20.glGetUniformLocation(shaderProgram, "texture");
-        int textureCoordinateHandle = GLES20.glGetAttribLocation(shaderProgram, "vTexCoordinate");
-        int positionHandle = GLES20.glGetAttribLocation(shaderProgram, "vPosition");
-        int textureTranformHandle = GLES20.glGetUniformLocation(shaderProgram, "textureTransform");
 
         GLES20.glEnableVertexAttribArray(positionHandle);
         GLES20.glVertexAttribPointer(positionHandle, 2, GLES20.GL_FLOAT, false, 0, vertexBuffer);
@@ -168,7 +174,7 @@ public class VideoTextureSurfaceRenderer extends TextureSurfaceRenderer implemen
     {
         setupVertexBuffer();
         setupTexture();
-        loadShaders();
+        setupGraphics();
     }
 
     @Override
