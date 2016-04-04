@@ -25,8 +25,6 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     private TextureSurfaceRenderer videoRenderer;
     private int surfaceWidth;
     private int surfaceHeight;
-    private Surface mSurface;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,7 +46,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         try {
             this.mediaPlayer = new MediaPlayer();
 
-            while (videoRenderer.getSurfaceTexture() == null) {
+            while (videoRenderer.getVideoTexture() == null) {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
@@ -56,10 +54,11 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                 }
             }
 
-            mSurface = new Surface(videoRenderer.getSurfaceTexture());
+            Surface surface = new Surface(videoRenderer.getVideoTexture());
             mediaPlayer.setDataSource(videoPath);
-            mediaPlayer.setSurface(mSurface);
-            mSurface.release();
+            mediaPlayer.setSurface(surface);
+
+            surface.release();
 
             mediaPlayer.prepareAsync();
             mediaPlayer.setOnPreparedListener(this);
@@ -111,6 +110,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         super.onPause();
         if (videoRenderer != null) {
             videoRenderer.onPause();
+            videoRenderer = null;
         }
         if (mediaPlayer != null) {
             mediaPlayer.release();

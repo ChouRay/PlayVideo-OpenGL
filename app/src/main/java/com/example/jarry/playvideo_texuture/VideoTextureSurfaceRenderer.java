@@ -49,7 +49,7 @@ public class VideoTextureSurfaceRenderer extends TextureSurfaceRenderer implemen
     private FloatBuffer vertexBuffer;
     private ShortBuffer drawListBuffer;
 
-    private SurfaceTexture surfaceTexture;
+    private SurfaceTexture videoTexture;
     private float[] videoTextureTransform;
     private boolean frameAvailable = false;
 
@@ -107,10 +107,8 @@ public class VideoTextureSurfaceRenderer extends TextureSurfaceRenderer implemen
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textures[0]);
         checkGlError("Texture bind");
 
-        if (surfaceTexture == null) {
-            surfaceTexture = new SurfaceTexture(textures[0]);
-            surfaceTexture.setOnFrameAvailableListener(this);
-        }
+        videoTexture = new SurfaceTexture(textures[0]);
+        videoTexture.setOnFrameAvailableListener(this);
     }
 
     @Override
@@ -120,8 +118,8 @@ public class VideoTextureSurfaceRenderer extends TextureSurfaceRenderer implemen
         {
             if (frameAvailable)
             {
-                surfaceTexture.updateTexImage();
-                surfaceTexture.getTransformMatrix(videoTextureTransform);
+                videoTexture.updateTexImage();
+                videoTexture.getTransformMatrix(videoTextureTransform);
                 frameAvailable = false;
             }
             else
@@ -178,8 +176,8 @@ public class VideoTextureSurfaceRenderer extends TextureSurfaceRenderer implemen
     {
         GLES20.glDeleteTextures(1, textures, 0);
         GLES20.glDeleteProgram(shaderProgram);
-        surfaceTexture.release();
-        surfaceTexture.setOnFrameAvailableListener(null);
+        videoTexture.release();
+        videoTexture.setOnFrameAvailableListener(null);
     }
 
 
@@ -192,9 +190,9 @@ public class VideoTextureSurfaceRenderer extends TextureSurfaceRenderer implemen
     }
 
     @Override
-    public SurfaceTexture getSurfaceTexture()
+    public SurfaceTexture getVideoTexture()
     {
-        return surfaceTexture;
+        return videoTexture;
     }
 
     @Override
@@ -203,6 +201,7 @@ public class VideoTextureSurfaceRenderer extends TextureSurfaceRenderer implemen
         synchronized (this)
         {
             frameAvailable = true;
+            Log.e("TAG", "----------------");
         }
     }
 }
