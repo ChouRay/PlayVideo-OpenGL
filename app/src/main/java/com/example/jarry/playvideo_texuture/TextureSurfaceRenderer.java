@@ -107,7 +107,7 @@ public abstract class TextureSurfaceRenderer implements Runnable{
     protected abstract void initGLComponents();
     protected abstract void deinitGLComponents();
 
-    public abstract SurfaceTexture getSurfaceTexture();
+    public abstract SurfaceTexture getVideoTexture();
 
     /**
      * 为当前渲染的API创建一个渲染上下文
