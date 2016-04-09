@@ -30,6 +30,8 @@ public abstract class TextureSurfaceRenderer implements Runnable{
     private EGLContext eglContext;
     private EGLDisplay eglDisplay;
     private EGLSurface eglSurface;
+
+
     /***
      * 是否正在绘制(draw)
      */
@@ -37,6 +39,7 @@ public abstract class TextureSurfaceRenderer implements Runnable{
 
     public TextureSurfaceRenderer(SurfaceTexture surfaceTexture, int width, int height) {
         this.surfaceTexture = surfaceTexture;
+        Log.e("TAG", "surfaceTexture obj="+ surfaceTexture.toString());
         this.width = width;
         this.height = height;
         this.running = true;
