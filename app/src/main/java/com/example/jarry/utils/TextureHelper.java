@@ -1,4 +1,4 @@
-package com.example.jarry.playvideo_texuture.utils;
+package com.example.jarry.utils;
 
 import android.content.Context;
 import android.graphics.Bitmap;

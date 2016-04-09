@@ -8,8 +8,8 @@ import android.opengl.GLES20;
 import android.opengl.GLUtils;
 import android.util.Log;
 
-import com.example.jarry.playvideo_texuture.utils.RawResourceReader;
-import com.example.jarry.playvideo_texuture.utils.ShaderHelper;
+import com.example.jarry.utils.RawResourceReader;
+import com.example.jarry.utils.ShaderHelper;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -207,7 +207,6 @@ public class VideoTextureSurfaceRenderer extends TextureSurfaceRenderer implemen
         synchronized (this)
         {
             frameAvailable = true;
-            Log.e("TAG", "----------------");
         }
     }
 }

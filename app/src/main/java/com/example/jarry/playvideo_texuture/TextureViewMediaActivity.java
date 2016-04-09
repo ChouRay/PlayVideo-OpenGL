@@ -13,9 +13,9 @@ import android.view.TextureView;
 
 import java.io.IOException;
 
-public class MainActivity extends Activity implements TextureView.SurfaceTextureListener,
+public class TextureViewMediaActivity extends Activity implements TextureView.SurfaceTextureListener,
         MediaPlayer.OnPreparedListener,  SurfaceHolder.Callback{
-    private static final String TAG = "MainActivity";
+    private static final String TAG = "GLViewMediaActivity";
 
 
     public static final String videoPath = Environment.getExternalStorageDirectory().getPath()+"/one.mp4";
@@ -93,20 +93,20 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     protected void onResume() {
         super.onResume();
 
-        Log.v(TAG, "MainActivity::onResume()");
+        Log.v(TAG, "GLViewMediaActivity::onResume()");
         super.onResume();
     }
 
 
     @Override protected void onStart()
     {
-        Log.v(TAG, "MainActivity::onStart()");
+        Log.v(TAG, "GLViewMediaActivity::onStart()");
         super.onStart();
     }
 
     @Override
     protected void onPause() {
-        Log.v(TAG, "MainActivity::onPause()");
+        Log.v(TAG, "GLViewMediaActivity::onPause()");
         super.onPause();
         if (videoRenderer != null) {
             videoRenderer.onPause();
@@ -120,20 +120,20 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     @Override protected void onStop()
     {
-        Log.v(TAG, "MainActivity::onStop()");
+        Log.v(TAG, "GLViewMediaActivity::onStop()");
         super.onStop();
     }
 
     @Override protected void onDestroy()
     {
-        Log.v(TAG, "MainActivity::onDestroy()");
+        Log.v(TAG, "GLViewMediaActivity::onDestroy()");
         super.onDestroy();
     }
 
 
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-        Log.v( TAG, "MainActivity::onSurfaceTextureAvailable()" );
+        Log.v( TAG, "GLViewMediaActivity::onSurfaceTextureAvailable()" );
 
         surfaceWidth = width;
         surfaceHeight = height;
@@ -159,16 +159,16 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        Log.v( TAG, "MainActivity::surfaceCreated()" );
+        Log.v( TAG, "GLViewMediaActivity::surfaceCreated()" );
     }
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-        Log.v( TAG, "MainActivity::surfaceChanged()" );
+        Log.v( TAG, "GLViewMediaActivity::surfaceChanged()" );
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-        Log.v( TAG, "MainActivity::surfaceDestroyed()" );
+        Log.v( TAG, "GLViewMediaActivity::surfaceDestroyed()" );
     }
 }
