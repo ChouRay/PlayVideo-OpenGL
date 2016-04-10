@@ -1,3 +1,3 @@
 # PlayVideo-OpenGL
 
-OpengGL + SurfaceTexture + TextureView 显示视频的播放Demo
+通过Opengl ES去绘制视频的demo
