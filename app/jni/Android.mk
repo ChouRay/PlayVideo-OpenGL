@@ -19,11 +19,6 @@ LOCAL_CPPFLAGS := -Wno-type-limits
 LOCAL_CPPFLAGS += -Wno-invalid-offsetof
 LOCAL_CPPFLAGS += -Wno-unused-function
 
-#ifeq ($(DPN_DEBUG),1)
-#  LOCAL_CFLAGS += -DDPN_BUILD_DEBUG=1 -O0 -g
-#else
-#  LOCAL_CFLAGS += -O3
-#endif
 
 LOCAL_LDLIBS    := -llog -landroid -lEGL -lGLESv2 -lGLESv3
 
