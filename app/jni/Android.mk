@@ -22,7 +22,7 @@ LOCAL_CPPFLAGS += -Wno-unused-function
 
 LOCAL_LDLIBS    := -llog -landroid -lEGL -lGLESv2 -lGLESv3
 
-LOCAL_SRC_FILES  := NativeVideo.cpp
+LOCAL_SRC_FILES  := NativeMedia.cpp
 
 include $(BUILD_SHARED_LIBRARY)
 

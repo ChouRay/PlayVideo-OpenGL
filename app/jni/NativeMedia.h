@@ -5,30 +5,22 @@
 #define PLAYVIDEO_TEXUTURE_NATIVEVIDEO_H
 
 
-#include <pthread.h>
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
 
-#include <pthread.h>
-
 #include <jni.h>
 #include <strings.h>
-#include <android/log.h>
 
-
-#define LOG_INFO(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
-#define LOG_ERROR(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
-#define LOG(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 
 
 class NativeMedia {
 
 public:
-    NativeVideo();
-    virtual ~NativeVideo();
+    NativeMedia();
+    virtual ~NativeMedia();
 
-    bool setupEGL();
-    void setupSurfaceTexture(int texId);
+
+    void setupSurfaceTexture();
 
     // For some java-side uses, you can set the size
     // of the buffer before it is used to control how
@@ -42,16 +34,9 @@ public:
     // texture unit.
     void Update();
 
-    unsigned GetTextureId();
-    jobject GetJavaObject();
-    long long GetNanoTimeStamp();
-    JNIEnv *AttachJava();
-    void renderLoop();
     void renderFrame();
     bool setupGraphics(int w, int h);
     void setFrameAvailable(bool const available);
-
-    static void *threadCallback(void *);
 
     void setNativeWindow(ANativeWindow *window);
     void setActivity(jobject obj);
@@ -62,20 +47,12 @@ private:
     JavaVM *javaVM;
     jobject activity;
     ANativeWindow* nativeWindow;
-    pthread_t pthreadId;
-    pthread_mutex_t mutex;
 
-    /*about EGL*/
-    EGLDisplay display;
-    EGLSurface surface;
-    EGLContext context;
 
     bool running;
     bool fameAvailable;
 
-
     /**about---surfaceTexture*/
-    unsigned textureId;
     jobject javaObject;
 
     // Updated when Update() is called, can be used to
@@ -86,7 +63,6 @@ private:
     jmethodID updateTexImageMethodId;
     jmethodID getTimestampMethodId;
     jmethodID setDefaultBufferSizeMethodId;
-
 
 };
 

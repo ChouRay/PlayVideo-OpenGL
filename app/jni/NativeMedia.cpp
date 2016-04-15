@@ -4,14 +4,14 @@
 
 #include <stdint.h>
 #include <jni.h>
+#include <android/log.h>
+
 #include <unistd.h>
-#include <pthread.h>
 #include <android/native_window.h> // requires ndk r5 or newer
 #include <android/native_window_jni.h> // requires ndk r5 or newer
 #include <EGL/egl.h> // requires ndk r5 or newer
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
-
 #include "NativeMedia.h"
 
 #define LOG_TAG "NativeVideo"
@@ -20,6 +20,8 @@
 #define LOG_ERROR(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 #define LOG(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 
+
+JavaVM *gJavaVM;
 
 
 static const GLfloat texMatrix[16] = {
@@ -47,7 +49,7 @@ static const GLfloat textureCoords[] = {
 
 const GLint drawOrder[6] = {0, 1, 2, 0, 2, 3};
 
-GLuint texID;
+GLuint texId;
 GLuint shaderProgram;
 GLuint positionHandle;
 GLint textureParamHandle;
@@ -145,36 +147,26 @@ GLuint createProgram(const char *pVertexSource, const char *pFragmentSource) {
     return program;
 }
 
-NativeMedia::NativeVideo():
+NativeMedia::NativeMedia():
         jni(NULL),
         javaVM(NULL),
         activity(0),
         nativeWindow(0),
-        display(0),
-        surface(0),
-        context(0),
-        textureId(0),
         javaObject(NULL),
         nanoTimeStamp(0),
         updateTexImageMethodId(NULL),
         getTimestampMethodId(NULL),
         setDefaultBufferSizeMethodId(NULL)
 {
-    pthread_create(&pthreadId, 0 , threadCallback, this);
 }
 
-NativeMedia::~NativeVideo() {
+NativeMedia::~NativeMedia() {
     if (javaObject) {
         jni->DeleteGlobalRef( javaObject );
         javaObject = 0;
     }
 }
 
-void *NativeMedia::threadCallback(void *myself) {
-    NativeMedia *my = (NativeMedia *)myself;
-    my->renderLoop();
-    pthread_exit(0);
-}
 
 bool NativeMedia::setupGraphics(int w, int h) {
     shaderProgram = createProgram(gVertexShader, gFragmentShader);
@@ -202,20 +194,8 @@ bool NativeMedia::setupGraphics(int w, int h) {
     LOG("glGetUniformLocation(\"vtexMatrix\") = %d\n", textureTranformHandle);
 
 
-    glGenTextures(1, &texID);
-    checkGlError("glGenTextures");
-
-    glBindTexture(GL_TEXTURE_EXTERNAL_OES, texID);
-    checkGlError("glBindTexture");
-
-    glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
     return true;
 }
-
 
 void NativeMedia::renderFrame() {
 
@@ -242,107 +222,12 @@ void NativeMedia::renderFrame() {
     checkGlError("texMatrix, glUniformMatrix4fv");
 
 
-    LOG("bindTextureId: %d  native_thread(%u)\n", texID, (unsigned int) pthread_self());
-
     glUniform1i(textureParamHandle, 0);
     checkGlError("glUniform1i");
-
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, drawOrder);
     checkGlError("glDrawArrays");
 
-}
-
-
-void NativeMedia::renderLoop() {
-
-    while (true) {
-
-    }
-
-}
-
-
-
-bool NativeMedia::setupEGL () {
-    const EGLint attribs[] = {
-            EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
-            EGL_BLUE_SIZE, 8,
-            EGL_GREEN_SIZE, 8,
-            EGL_RED_SIZE, 8,
-            EGL_NONE
-    };
-
-    EGLint contextAttribs[] = {
-            EGL_CONTEXT_CLIENT_VERSION, 3,
-            EGL_NONE};
-
-    EGLConfig config;
-    EGLint numConfigs;
-    EGLint format;
-    EGLint width;
-    EGLint height;
-    //GLfloat ratio;
-
-    LOG_INFO("Initializing context");
-
-    if ((display = eglGetDisplay(EGL_DEFAULT_DISPLAY)) == EGL_NO_DISPLAY) {
-        LOG_ERROR("eglGetDisplay() returned error %d", eglGetError());
-        return false;
-    }
-    if (!eglInitialize(display, 0, 0)) {
-        LOG_ERROR("eglInitialize() returned error %d", eglGetError());
-        return false;
-    }
-
-    if (!eglChooseConfig(display, attribs, &config, 1, &numConfigs)) {
-        LOG_ERROR("eglChooseConfig() returned error %d", eglGetError());
-        destroy();
-        return false;
-    }
-
-    if (!eglGetConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &format)) {
-        LOG_ERROR("eglGetConfigAttrib() returned error %d", eglGetError());
-        destroy();
-        return false;
-    }
-
-    ANativeWindow_setBuffersGeometry(nativeWindow, 0, 0, format);
-
-    if (!(surface = eglCreateWindowSurface(display, config, nativeWindow, 0))) {
-        LOG_ERROR("eglCreateWindowSurface() returned error %d", eglGetError());
-        destroy();
-        return false;
-    }
-
-    if (!(context = eglCreateContext(display, config, 0, contextAttribs))) {
-        LOG_ERROR("eglCreateContext() returned error %d", eglGetError());
-        destroy();
-        return false;
-    }
-
-    if (!eglMakeCurrent(display, surface, surface, context)) {
-        LOG_ERROR("eglMakeCurrent() returned error %d", eglGetError());
-        destroy();
-        return false;
-    }
-
-    if (!eglQuerySurface(display, surface, EGL_WIDTH, &width) ||
-        !eglQuerySurface(display, surface, EGL_HEIGHT, &height)) {
-        LOG_ERROR("eglQuerySurface() returned error %d", eglGetError());
-        destroy();
-        return false;
-    }
-
-    glDisable(GL_DITHER);
-    glClearColor(0, 0, 0, 0);
-    glDisable(GL_DEPTH_TEST);
-
-    glViewport(0, 0, width, height);
-
-    setupGraphics(width, height);
-
-    return true;
 }
 
 
@@ -359,23 +244,13 @@ void NativeMedia::setActivity(jobject activityObj) {
 
 void NativeMedia::destroy() {
     LOG_INFO("Destroying context");
-
-    eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-    eglDestroyContext(display, context);
-    eglDestroySurface(display, surface);
-//    eglTerminate(diaplay);                ////  display not declare ????
-
-    display = EGL_NO_DISPLAY;
-    surface = EGL_NO_SURFACE;
-    context = EGL_NO_CONTEXT;
-
 }
 
-JNIEnv*NativeMedia::AttachJava()
+JNIEnv *AttachJava()
 {
     JavaVMAttachArgs args = {JNI_VERSION_1_4, 0, 0};
     JNIEnv* java;
-    javaVM->AttachCurrentThread( &java, &args);
+    gJavaVM->AttachCurrentThread( &java, &args);
     return java;
 }
 
@@ -384,9 +259,19 @@ JNIEnv*NativeMedia::AttachJava()
 //              获取java SurfaceTexture
 //==============================================================================================//
 
-void NativeMedia::setupSurfaceTexture(int texId) {
+void NativeMedia::setupSurfaceTexture() {
 
-    textureId = texId;
+    glGenTextures(1, &texId);
+    checkGlError("glGenTextures");
+
+    glBindTexture(GL_TEXTURE_EXTERNAL_OES, texId);
+    checkGlError("glBindTexture");
+
+    glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
     jni = AttachJava();
     const char *stClassPath = "android/graphics/SurfaceTexture";
     const jclass surfaceTextureClass = jni->FindClass(stClassPath);
@@ -426,12 +311,7 @@ void NativeMedia::setupSurfaceTexture(int texId) {
     // jclass objects are loacalRefs that need to be free;
     jni->DeleteLocalRef( surfaceTextureClass );
 
-//    if(isAttached) javaVM->DetachCurrentThread();
-    int textureID = GetTextureId();
-    LOG_INFO("SurfaceTexture Init Success. JavaObject ptr:%p texId: %d ", &javaObject,GetTextureId());
-    LOG_INFO("texId addr: %p ", &textureID);
 }
-
 
 
 void NativeMedia::SetDefaultBufferSizse(const int width, const int height) {
@@ -443,22 +323,12 @@ void NativeMedia::Update() {
     if (!javaObject) {
         return;
     }
-    LOG("+++++updateTexImage++++++javaObejct: %p *******textureId: %p",&javaObject, &textureId);
+    LOG("+++++updateTexImage++++++javaObejct: %p *******textureId: %p",&javaObject, &texId);
     jni->CallVoidMethod(javaObject, updateTexImageMethodId);
     nanoTimeStamp = jni->CallLongMethod( javaObject, getTimestampMethodId );
 }
 
-unsigned NativeMedia::GetTextureId() {
-    return textureId;
-}
 
-jobject NativeMedia::GetJavaObject() {
-    return javaObject;
-}
-
-long  long NativeMedia::GetNanoTimeStamp() {
-    return nanoTimeStamp;
-}
 
 
 
