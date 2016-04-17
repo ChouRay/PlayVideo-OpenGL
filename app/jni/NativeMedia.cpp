@@ -4,12 +4,14 @@
 
 #include <stdint.h>
 #include <jni.h>
+#include <pthread.h>
 #include <android/log.h>
 
 #include <unistd.h>
-#include <android/native_window.h> // requires ndk r5 or newer
-#include <android/native_window_jni.h> // requires ndk r5 or newer
+#include <android/native_window.h>
+#include <android/native_window_jni.h>
 #include <EGL/egl.h> // requires ndk r5 or newer
+#include <GLES3/gl3.h>
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 #include "NativeMedia.h"
@@ -22,6 +24,26 @@
 
 
 JavaVM *gJavaVM;
+NativeMedia *gNativeMedia;
+
+pthread_mutex_t gMutex;
+
+GLuint vetexBufferObj;
+GLuint vetexBufferPositions;
+GLuint vetexBufferTextureCoords;
+GLuint indexBufer;
+
+
+static void checkGlError(const char *op) {
+    for (GLint error = glGetError(); error; error = glGetError()) {
+        LOG("after %s() glError (0x%x)\n", op, error);
+    }
+}
+
+enum {
+    ATTRIBUTE_LOCATION_QUAD_POSITION,
+    ATTRIBUTE_LOCATION_TEXTURE_UV
+};
 
 
 static const GLfloat texMatrix[16] = {
@@ -32,7 +54,7 @@ static const GLfloat texMatrix[16] = {
 };
 
 static float squareSize = 1.0f;
-const GLfloat squareCoords[] = {
+static const float squareCoords[] = {
         -squareSize, squareSize,
         -squareSize, -squareSize,
 
@@ -40,14 +62,41 @@ const GLfloat squareCoords[] = {
         squareSize, squareSize
 };
 
-static const GLfloat textureCoords[] = {
+static const float textureCoords[] = {
         0.0f, 1.0f,
         0.0f, 0.0f,
         1.0f, 0.0f,
         1.0f, 1.0f
 };
 
-const GLint drawOrder[6] = {0, 1, 2, 0, 2, 3};
+static const int drawOrder[6] = {0, 1, 2, 0, 2, 3};
+
+static void createVideoGeometry() {
+    glGenVertexArrays( 1, &vetexBufferObj );
+    glBindVertexArray( vetexBufferObj );
+    glGenBuffers ( 1, &vetexBufferPositions);
+
+    glBindBuffer ( GL_ARRAY_BUFFER, vetexBufferPositions);
+    glBufferData ( GL_ARRAY_BUFFER, sizeof(squareCoords), &squareCoords, GL_STATIC_DRAW);
+    glEnableVertexAttribArray ( ATTRIBUTE_LOCATION_QUAD_POSITION );
+    glVertexAttribPointer ( ATTRIBUTE_LOCATION_QUAD_POSITION, 2, GL_FLOAT, false, 0, squareCoords);
+
+    glGenBuffers ( 1, &vetexBufferTextureCoords);
+    glBindBuffer ( GL_ARRAY_BUFFER, vetexBufferTextureCoords);
+    glBufferData ( GL_ARRAY_BUFFER, sizeof(textureCoords), &textureCoords, GL_STATIC_DRAW);
+    glEnableVertexAttribArray ( ATTRIBUTE_LOCATION_TEXTURE_UV );
+    glVertexAttribPointer ( ATTRIBUTE_LOCATION_TEXTURE_UV, 2, GL_FLOAT, false, 0, textureCoords);
+
+    glGenBuffers ( 1, &indexBufer);
+    glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, indexBufer);
+    glBufferData ( GL_ELEMENT_ARRAY_BUFFER, sizeof(drawOrder), &drawOrder, GL_STATIC_DRAW);
+
+    glBindVertexArray( 0 );
+    glDisableVertexAttribArray( ATTRIBUTE_LOCATION_QUAD_POSITION );
+    glDisableVertexAttribArray( ATTRIBUTE_LOCATION_TEXTURE_UV );
+
+}
+
 
 GLuint texId;
 GLuint shaderProgram;
@@ -56,12 +105,8 @@ GLint textureParamHandle;
 GLuint textureCoordHandle;
 GLuint textureTranformHandle;
 
+int width, height;
 
-static void checkGlError(const char *op) {
-    for (GLint error = glGetError(); error; error = glGetError()) {
-        LOG("after %s() glError (0x%x)\n", op, error);
-    }
-}
 
 static const char gVertexShader[] =
         "attribute vec4 vPosition;\n"
@@ -150,31 +195,41 @@ GLuint createProgram(const char *pVertexSource, const char *pFragmentSource) {
 NativeMedia::NativeMedia():
         jni(NULL),
         javaVM(NULL),
-        activity(0),
-        nativeWindow(0),
-        javaObject(NULL),
+        javaSurfaceTextureObj(NULL),
         nanoTimeStamp(0),
         updateTexImageMethodId(NULL),
         getTimestampMethodId(NULL),
         setDefaultBufferSizeMethodId(NULL)
 {
+    pthread_mutex_init(&gMutex, 0);
 }
 
 NativeMedia::~NativeMedia() {
-    if (javaObject) {
-        jni->DeleteGlobalRef( javaObject );
-        javaObject = 0;
+
+    pthread_mutex_destroy(&gMutex);
+
+    if (javaSurfaceTextureObj) {
+        jni->DeleteGlobalRef( javaSurfaceTextureObj );
+        javaSurfaceTextureObj = 0;
     }
 }
 
+jobject NativeMedia::getSurfaceTextureObject() {
+    if (javaSurfaceTextureObj == NULL) {
+        LOG_ERROR("SurfaceTexture not be NULL");
+        return NULL;
+    }
 
-bool NativeMedia::setupGraphics(int w, int h) {
+    return javaSurfaceTextureObj;
+}
+
+void NativeMedia::setupGraphics(int w, int h) {
     shaderProgram = createProgram(gVertexShader, gFragmentShader);
-    LOG("setupGraphics: %d  (w: %d)\n", shaderProgram, w);
+    LOG("setupGraphics: %d \n", shaderProgram);
 
     if (!shaderProgram) {
-        LOG("gProgram: %d  (%s)\n", shaderProgram, "createProgram error");
-        return false;
+        LOG_ERROR("gProgram: %d  (%s)\n", shaderProgram, "createProgram error");
+        return;
     }
 
     textureParamHandle = glGetUniformLocation(shaderProgram, "texture");
@@ -193,14 +248,34 @@ bool NativeMedia::setupGraphics(int w, int h) {
     checkGlError("glGetAttribLocation");
     LOG("glGetUniformLocation(\"vtexMatrix\") = %d\n", textureTranformHandle);
 
+    width  = w;
+    height = h;
 
-    return true;
+    LOG_INFO("set meidia graphics success w: %d, h: %d", w, h);
+}
+
+void NativeMedia::setFrameAvailable(bool const available) {
+    pthread_mutex_lock(&gMutex);
+    fameAvailable = available;
+    pthread_mutex_unlock(&gMutex);
 }
 
 void NativeMedia::renderFrame() {
 
-    glViewport(0, 0, 1920, 1080);
+    pthread_mutex_lock(&gMutex);
+
+    if (fameAvailable) {
+        Update();
+    }
+
+    pthread_mutex_unlock(&gMutex);
+
+
+    glViewport(0, 0, width, height);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear( GL_COLOR_BUFFER_BIT);
+
+
     checkGlError("glClearColor");
     glClear(GL_COLOR_BUFFER_BIT);
     checkGlError("glClear");
@@ -208,42 +283,29 @@ void NativeMedia::renderFrame() {
     glUseProgram(shaderProgram);
     checkGlError("glUseProgram");
 
-    glVertexAttribPointer(positionHandle, 2, GL_FLOAT, GL_FALSE, 0, squareCoords);
-    checkGlError("gQuadVertices,glVertexAttribPointer");
-    glEnableVertexAttribArray(positionHandle);
-    checkGlError("glEnableVertexAttribArray");
-
-    glVertexAttribPointer(textureCoordHandle, 2, GL_FLOAT, GL_FALSE, 0, textureCoords);
-    checkGlError("textureCoords,glVertexAttribPointer");
-    glEnableVertexAttribArray(textureCoordHandle);
-    checkGlError("glEnableVertexAttribArray");
+    glActiveTexture(GL_TEXTURE0) ;
+    glBindTexture(GL_TEXTURE_EXTERNAL_OES, texId) ;
+    glUniform1i(textureParamHandle, 0);
 
     glUniformMatrix4fv(textureTranformHandle, 1, GL_FALSE, texMatrix);
     checkGlError("texMatrix, glUniformMatrix4fv");
 
-
-    glUniform1i(textureParamHandle, 0);
     checkGlError("glUniform1i");
 
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, drawOrder);
-    checkGlError("glDrawArrays");
+    glBindVertexArray( vetexBufferObj );
+    checkGlError("glBindVertexArray");
+
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void *)0);
+    checkGlError("glDrawElementsglDrawElements");
 
 }
 
-
-//=================================================================================================//
-//            native lifecycle
-//=================================================================================================//
-
-void NativeMedia::setNativeWindow(ANativeWindow *window) {
-
-}
-void NativeMedia::setActivity(jobject activityObj) {
-    activity = activityObj;
-}
 
 void NativeMedia::destroy() {
-    LOG_INFO("Destroying context");
+    LOG_INFO("native destroy");
+    glDeleteBuffers ( 1, &indexBufer);
+    glDeleteBuffers ( 1, &vetexBufferPositions);
+    glDeleteBuffers ( 1, &vetexBufferTextureCoords);
 }
 
 JNIEnv *AttachJava()
@@ -253,11 +315,6 @@ JNIEnv *AttachJava()
     gJavaVM->AttachCurrentThread( &java, &args);
     return java;
 }
-
-
-//==============================================================================================//
-//              获取java SurfaceTexture
-//==============================================================================================//
 
 void NativeMedia::setupSurfaceTexture() {
 
@@ -269,8 +326,8 @@ void NativeMedia::setupSurfaceTexture() {
 
     glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     jni = AttachJava();
     const char *stClassPath = "android/graphics/SurfaceTexture";
@@ -290,8 +347,8 @@ void NativeMedia::setupSurfaceTexture() {
         LOG_ERROR("NewObject() failed");
     }
 
-    javaObject = jni->NewGlobalRef(obj);
-    if (javaObject == 0) {
+    javaSurfaceTextureObj = jni->NewGlobalRef(obj);
+    if (javaSurfaceTextureObj == 0) {
         LOG_ERROR("NewGlobalRef() failed");
     }
 
@@ -311,24 +368,76 @@ void NativeMedia::setupSurfaceTexture() {
     // jclass objects are loacalRefs that need to be free;
     jni->DeleteLocalRef( surfaceTextureClass );
 
+    LOG_INFO("setupSurfaceTexture success: texId: %d", texId);
 }
 
 
 void NativeMedia::SetDefaultBufferSizse(const int width, const int height) {
-    jni->CallVoidMethod(javaObject, setDefaultBufferSizeMethodId, width, height);
+    jni->CallVoidMethod(javaSurfaceTextureObj, setDefaultBufferSizeMethodId, width, height);
 }
 
 void NativeMedia::Update() {
     //latch the latest movie frame to the texture
-    if (!javaObject) {
+    if (!javaSurfaceTextureObj) {
         return;
     }
-    LOG("+++++updateTexImage++++++javaObejct: %p *******textureId: %p",&javaObject, &texId);
-    jni->CallVoidMethod(javaObject, updateTexImageMethodId);
-    nanoTimeStamp = jni->CallLongMethod( javaObject, getTimestampMethodId );
+    LOG("+++++updateTexImage++++++javaObejct: %p *******textureId: %p",&javaSurfaceTextureObj, &texId);
+    jni->CallVoidMethod(javaSurfaceTextureObj, updateTexImageMethodId);
+    nanoTimeStamp = jni->CallLongMethod( javaSurfaceTextureObj, getTimestampMethodId );
 }
 
 
+extern "C" {
+
+//////////////////////////////////////////////////////////////////////////////////////////
+//                      java activity interface
+//////////////////////////////////////////////////////////////////////////////////////////
+JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeOnCreate(JNIEnv *env, jobject obj) {
+    LOG_INFO("nativeOnCreate");
+    gNativeMedia = new NativeMedia();
+    env->GetJavaVM(&gJavaVM);
+}
+
+JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeOnDestroy(JNIEnv *env, jobject obj) {
+    LOG_INFO("nativeOnCreate");
+    gNativeMedia->destroy();
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+//                  java gl_surface_view renderer interface
+//////////////////////////////////////////////////////////////////////////////////////////////////
+JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeSurfaceCreated(JNIEnv *env, jobject obj) {
+    LOG_INFO("nativeSurfaceCreated");
+    gNativeMedia->setupSurfaceTexture();
+    createVideoGeometry();
+}
+JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeSurfaceChanged(JNIEnv *env, jobject obj, jint width, jint height) {
+    LOG_INFO("nativeSurfaceChanged");
+
+    gNativeMedia->setupGraphics(width, height);
+}
+JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeDrawFrame(JNIEnv *env, jobject obj) {
+//    LOG_INFO("nativeDrawFrame");
+    gNativeMedia->renderFrame();
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+//                  java SurfaceTexture interface
+////////////////////////////////////////////////////////////////////////////////////////////////////
+JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeFrameAailable(JNIEnv *env, jobject obj) {
+    LOG_INFO("nativeFrameAailable");
+    gNativeMedia->setFrameAvailable(true);
+}
+
+JNIEXPORT jobject JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeGetSurfaceTexture(JNIEnv *env, jobject obj) {
+    LOG_INFO("nativeGetSurfaceTexture");
+    jobject surfaceTextureObj;
+    surfaceTextureObj = gNativeMedia->getSurfaceTextureObject();
+
+    return surfaceTextureObj;
+}
+
+}       // end extern ""C
 
 
 

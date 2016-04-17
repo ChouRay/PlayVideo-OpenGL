@@ -32,8 +32,8 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="SurfaceViewNativeMedia"
-        android:id="@+id/button_Surface_view_native"
+        android:text="GLSurfaceViewNativeMedia"
+        android:id="@+id/button_glsurface_view_native"
         android:layout_centerVertical="true"
         android:layout_centerHorizontal="true"/>
 </RelativeLayout>

@@ -3,7 +3,7 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
-LOCAL_MODULE := native_video
+LOCAL_MODULE := native_media
 
 LOCAL_CFLAGS	:= -DANDROID_NDK
 LOCAL_CFLAGS	+= -Werror			# error on warnings

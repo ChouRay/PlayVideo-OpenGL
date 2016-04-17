@@ -5,11 +5,11 @@
 #define PLAYVIDEO_TEXUTURE_NATIVEVIDEO_H
 
 
-#include <EGL/egl.h>
-#include <GLES2/gl2.h>
-
 #include <jni.h>
 #include <strings.h>
+
+#include <EGL/egl.h>
+#include <GLES2/gl2.h>
 
 
 
@@ -35,25 +35,22 @@ public:
     void Update();
 
     void renderFrame();
-    bool setupGraphics(int w, int h);
+    void setupGraphics(int w, int h);
     void setFrameAvailable(bool const available);
 
-    void setNativeWindow(ANativeWindow *window);
-    void setActivity(jobject obj);
+    jobject getSurfaceTextureObject();
+
     void destroy();
 
 private:
     JNIEnv *jni;
     JavaVM *javaVM;
-    jobject activity;
-    ANativeWindow* nativeWindow;
-
 
     bool running;
     bool fameAvailable;
 
     /**about---surfaceTexture*/
-    jobject javaObject;
+    jobject javaSurfaceTextureObj;
 
     // Updated when Update() is called, can be used to
     // check if a new frame is available and ready

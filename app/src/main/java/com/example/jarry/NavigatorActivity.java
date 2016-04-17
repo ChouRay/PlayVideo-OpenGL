@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
 
-import com.example.jarry.playvideo_glsurfaceview.GLViewMediaActivity;
 import com.example.jarry.playvideo_texuture.R;
 import com.example.jarry.playvideo_texuture.TextureViewMediaActivity;
 
@@ -20,7 +19,7 @@ public class NavigatorActivity extends AppCompatActivity implements View.OnClick
         mIntent = new Intent();
         findViewById(R.id.button_texture_view).setOnClickListener(this);
         findViewById(R.id.button_glsurfaceview).setOnClickListener(this);
-        findViewById(R.id.button_Surface_view_native).setOnClickListener(this);
+        findViewById(R.id.button_glsurface_view_native).setOnClickListener(this);
     }
 
 
@@ -37,8 +36,10 @@ public class NavigatorActivity extends AppCompatActivity implements View.OnClick
                 startActivity(mIntent);
                 Toast.makeText(this, "Play Video on GLSurfaceView", Toast.LENGTH_SHORT).show();
                 break;
-            case R.id.button_Surface_view_native:
-                Toast.makeText(this, "以后有空再整^^", Toast.LENGTH_SHORT).show();
+            case R.id.button_glsurface_view_native:
+                Toast.makeText(this, "Play Video on Native GLSurfaceView", Toast.LENGTH_SHORT).show();
+                mIntent.setClass(this, NativeMediaActivity.class);
+                startActivity(mIntent);
                 break;
         }
     }

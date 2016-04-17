@@ -1,4 +1,4 @@
-package com.example.jarry.playvideo_glsurfaceview;
+package com.example.jarry;
 
 import android.content.Context;
 import android.graphics.SurfaceTexture;

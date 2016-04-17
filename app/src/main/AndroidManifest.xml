@@ -26,11 +26,14 @@
             android:theme="@style/AppTheme">
         </activity>
         <activity
-            android:name="com.example.jarry.playvideo_glsurfaceview.GLViewMediaActivity"
+            android:name="com.example.jarry.GLViewMediaActivity"
             android:launchMode="singleTask"
             android:screenOrientation="landscape">
         </activity>
-        <activity android:name="com.example.jarry.NativeMediaActivity">
+        <activity android:name="com.example.jarry.NativeMediaActivity"
+                  android:launchMode="singleTask"
+                  android:screenOrientation="landscape">
+
         </activity>
     </application>
 
