@@ -36,6 +36,7 @@ public:
 
     void renderFrame();
     void setupGraphics(int w, int h);
+    void createVideoGeometry();
     void setFrameAvailable(bool const available);
 
     jobject getSurfaceTextureObject();

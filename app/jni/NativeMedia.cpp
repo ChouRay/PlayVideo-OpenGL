@@ -63,29 +63,29 @@ static const float squareCoords[] = {
 };
 
 static const float textureCoords[] = {
-        0.0f, 1.0f,
-        0.0f, 0.0f,
-        1.0f, 0.0f,
-        1.0f, 1.0f
+        0.0f, 1.0f,0.0f, 0.1f,
+        0.0f, 0.0f,0.0f, 0.1f,
+        1.0f, 0.0f,0.0f, 0.1f,
+        1.0f, 1.0f,0.0f, 0.1f
 };
 
 static const int drawOrder[6] = {0, 1, 2, 0, 2, 3};
 
-static void createVideoGeometry() {
+void NativeMedia::createVideoGeometry() {
     glGenVertexArrays( 1, &vetexBufferObj );
     glBindVertexArray( vetexBufferObj );
-    glGenBuffers ( 1, &vetexBufferPositions);
 
+    glGenBuffers ( 1, &vetexBufferPositions);
     glBindBuffer ( GL_ARRAY_BUFFER, vetexBufferPositions);
     glBufferData ( GL_ARRAY_BUFFER, sizeof(squareCoords), &squareCoords, GL_STATIC_DRAW);
     glEnableVertexAttribArray ( ATTRIBUTE_LOCATION_QUAD_POSITION );
-    glVertexAttribPointer ( ATTRIBUTE_LOCATION_QUAD_POSITION, 2, GL_FLOAT, false, 0, squareCoords);
+    glVertexAttribPointer ( ATTRIBUTE_LOCATION_QUAD_POSITION, 2, GL_FLOAT, false, 0, (const GLvoid *)squareCoords);
 
     glGenBuffers ( 1, &vetexBufferTextureCoords);
     glBindBuffer ( GL_ARRAY_BUFFER, vetexBufferTextureCoords);
     glBufferData ( GL_ARRAY_BUFFER, sizeof(textureCoords), &textureCoords, GL_STATIC_DRAW);
     glEnableVertexAttribArray ( ATTRIBUTE_LOCATION_TEXTURE_UV );
-    glVertexAttribPointer ( ATTRIBUTE_LOCATION_TEXTURE_UV, 2, GL_FLOAT, false, 0, textureCoords);
+    glVertexAttribPointer ( ATTRIBUTE_LOCATION_TEXTURE_UV, 4, GL_FLOAT, false, 0, (const GLvoid *)textureCoords);
 
     glGenBuffers ( 1, &indexBufer);
     glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, indexBufer);
@@ -109,13 +109,13 @@ int width, height;
 
 
 static const char gVertexShader[] =
-        "attribute vec4 vPosition;\n"
-                "attribute vec4 vTexCoordinate;\n"
+        "attribute vec4 aPosition;\n"
+                "attribute vec4 aTexCoordinate;\n"
                 "uniform mat4 texMatrix;\n"
                 "varying vec2 v_TexCoordinate;\n"
                 "void main() {\n"
-                "v_TexCoordinate = (texMatrix * vTexCoordinate).xy;\n"
-                "gl_Position = vPosition;\n"
+                "v_TexCoordinate = (texMatrix * aTexCoordinate).xy;\n"
+                "gl_Position = aPosition;\n"
                 "}\n";
 
 static const char gFragmentShader[] =
@@ -236,13 +236,19 @@ void NativeMedia::setupGraphics(int w, int h) {
     checkGlError("glGetUniformLocation");
     LOG("glGetUniformLocation(\"texturen\") = %d\n", textureParamHandle);
 
-    positionHandle = glGetAttribLocation(shaderProgram, "vPosition");
+    positionHandle = glGetAttribLocation(shaderProgram, "aPosition");
     checkGlError("glGetAttribLocation");
     LOG("glGetAttribLocation(\"positionHandle\") = %d\n", positionHandle);
+    glBindAttribLocation( shaderProgram, positionHandle, "aPosition");
+    checkGlError("glBindAttribLocation");
 
-    textureCoordHandle = glGetAttribLocation(shaderProgram, "vTexCoordinate");
+
+    textureCoordHandle = glGetAttribLocation(shaderProgram, "aTexCoordinate");
     checkGlError("glGetAttribLocation");
-    LOG("glGetAttribLocation(\"vTexCoordinater\") = %d\n", textureCoordHandle);
+    LOG("glGetAttribLocation(\"aTexCoordinater\") = %d\n", textureCoordHandle);
+    glBindAttribLocation( shaderProgram, textureCoordHandle, "aPosition");
+    checkGlError("glBindAttribLocation");
+
 
     textureTranformHandle = glGetUniformLocation(shaderProgram, "texMatrix");
     checkGlError("glGetAttribLocation");
@@ -285,6 +291,7 @@ void NativeMedia::renderFrame() {
 
     glActiveTexture(GL_TEXTURE0) ;
     glBindTexture(GL_TEXTURE_EXTERNAL_OES, texId) ;
+
     glUniform1i(textureParamHandle, 0);
 
     glUniformMatrix4fv(textureTranformHandle, 1, GL_FALSE, texMatrix);
@@ -381,7 +388,7 @@ void NativeMedia::Update() {
     if (!javaSurfaceTextureObj) {
         return;
     }
-    LOG("+++++updateTexImage++++++javaObejct: %p *******textureId: %p",&javaSurfaceTextureObj, &texId);
+    LOG("+++++updateTexImage++++++javaObejct: %p *******textureId: %p, w:%d, h: %d",&javaSurfaceTextureObj, &texId, width, height);
     jni->CallVoidMethod(javaSurfaceTextureObj, updateTexImageMethodId);
     nanoTimeStamp = jni->CallLongMethod( javaSurfaceTextureObj, getTimestampMethodId );
 }
@@ -409,7 +416,7 @@ JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeOnDestroy
 JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeSurfaceCreated(JNIEnv *env, jobject obj) {
     LOG_INFO("nativeSurfaceCreated");
     gNativeMedia->setupSurfaceTexture();
-    createVideoGeometry();
+    gNativeMedia->createVideoGeometry();
 }
 JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeSurfaceChanged(JNIEnv *env, jobject obj, jint width, jint height) {
     LOG_INFO("nativeSurfaceChanged");
