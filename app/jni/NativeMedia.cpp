@@ -28,84 +28,12 @@ NativeMedia *gNativeMedia;
 
 pthread_mutex_t gMutex;
 
-GLuint vetexBufferObj;
-GLuint vetexBufferPositions;
-GLuint vetexBufferTextureCoords;
-GLuint indexBufer;
-
-
 static void checkGlError(const char *op) {
     for (GLint error = glGetError(); error; error = glGetError()) {
         LOG("after %s() glError (0x%x)\n", op, error);
     }
 }
 
-enum {
-    ATTRIBUTE_LOCATION_QUAD_POSITION,
-    ATTRIBUTE_LOCATION_TEXTURE_UV
-};
-
-
-static const GLfloat texMatrix[16] = {
-        1.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, -1.0f, 0.0f, 0.0f,
-        1.0f, 0.0f, 1.0f, 0.0f,
-        1.0f, 1.0f, 0.0f, 1.0f
-};
-
-static float squareSize = 1.0f;
-static const float squareCoords[] = {
-        -squareSize, squareSize,
-        -squareSize, -squareSize,
-
-        squareSize, -squareSize,
-        squareSize, squareSize
-};
-
-static const float textureCoords[] = {
-        0.0f, 1.0f,0.0f, 0.1f,
-        0.0f, 0.0f,0.0f, 0.1f,
-        1.0f, 0.0f,0.0f, 0.1f,
-        1.0f, 1.0f,0.0f, 0.1f
-};
-
-static const int drawOrder[6] = {0, 1, 2, 0, 2, 3};
-
-void NativeMedia::createVideoGeometry() {
-    glGenVertexArrays( 1, &vetexBufferObj );
-    glBindVertexArray( vetexBufferObj );
-
-    glGenBuffers ( 1, &vetexBufferPositions);
-    glBindBuffer ( GL_ARRAY_BUFFER, vetexBufferPositions);
-    glBufferData ( GL_ARRAY_BUFFER, sizeof(squareCoords), &squareCoords, GL_STATIC_DRAW);
-    glEnableVertexAttribArray ( ATTRIBUTE_LOCATION_QUAD_POSITION );
-    glVertexAttribPointer ( ATTRIBUTE_LOCATION_QUAD_POSITION, 2, GL_FLOAT, false, 0, (const GLvoid *)squareCoords);
-
-    glGenBuffers ( 1, &vetexBufferTextureCoords);
-    glBindBuffer ( GL_ARRAY_BUFFER, vetexBufferTextureCoords);
-    glBufferData ( GL_ARRAY_BUFFER, sizeof(textureCoords), &textureCoords, GL_STATIC_DRAW);
-    glEnableVertexAttribArray ( ATTRIBUTE_LOCATION_TEXTURE_UV );
-    glVertexAttribPointer ( ATTRIBUTE_LOCATION_TEXTURE_UV, 4, GL_FLOAT, false, 0, (const GLvoid *)textureCoords);
-
-    glGenBuffers ( 1, &indexBufer);
-    glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, indexBufer);
-    glBufferData ( GL_ELEMENT_ARRAY_BUFFER, sizeof(drawOrder), &drawOrder, GL_STATIC_DRAW);
-
-    glBindVertexArray( 0 );
-    glDisableVertexAttribArray( ATTRIBUTE_LOCATION_QUAD_POSITION );
-    glDisableVertexAttribArray( ATTRIBUTE_LOCATION_TEXTURE_UV );
-
-}
-
-
-GLuint texId;
-GLuint shaderProgram;
-GLuint positionHandle;
-GLint textureParamHandle;
-GLuint textureCoordHandle;
-GLuint textureTranformHandle;
-
-int width, height;
 
 
 static const char gVertexShader[] =
@@ -223,7 +151,61 @@ jobject NativeMedia::getSurfaceTextureObject() {
     return javaSurfaceTextureObj;
 }
 
+GLuint vao;
+GLuint vetexBufferPositions;
+GLuint vetexBufferTextureCoords;
+GLuint indexBufer;
+
+static const GLfloat texMatrix[16] = {
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, -1.0f, 0.0f, 0.0f,
+        1.0f, 0.0f, 1.0f, 0.0f,
+        1.0f, 1.0f, 0.0f, 1.0f
+};
+
+
+
+static const int drawOrder[6] = {0, 1, 2, 0, 2, 3};
+
+typedef struct {
+    float squareCoords[4][2];
+    float textureCoords[4][4];
+} Vertices;
+
+
+static float squareSize = 1.0f;
+static const Vertices videoVetices = {
+        // squareCoords
+        {
+                -squareSize, squareSize,
+                -squareSize, -squareSize,
+
+                squareSize, -squareSize,
+                squareSize, squareSize
+        },
+        // textureCoords
+        {
+                0.0f, 1.0f, 0.0f, 1.0f,
+                0.0f, 0.0f, 0.0f, 1.0f,
+                1.0f, 0.0f, 0.0f, 1.0f,
+                1.0f, 1.0f, 0.0f, 1.0f
+        },
+};
+
+
+GLuint texId;
+GLuint shaderProgram;
+GLuint positionHandle;
+GLint textureParamHandle;
+GLuint textureCoordHandle;
+GLuint textureTranformHandle;
+
+int width, height;
+
 void NativeMedia::setupGraphics(int w, int h) {
+
+    createVideoGeometry();
+
     shaderProgram = createProgram(gVertexShader, gFragmentShader);
     LOG("setupGraphics: %d \n", shaderProgram);
 
@@ -239,26 +221,49 @@ void NativeMedia::setupGraphics(int w, int h) {
     positionHandle = glGetAttribLocation(shaderProgram, "aPosition");
     checkGlError("glGetAttribLocation");
     LOG("glGetAttribLocation(\"positionHandle\") = %d\n", positionHandle);
-    glBindAttribLocation( shaderProgram, positionHandle, "aPosition");
-    checkGlError("glBindAttribLocation");
-
 
     textureCoordHandle = glGetAttribLocation(shaderProgram, "aTexCoordinate");
     checkGlError("glGetAttribLocation");
     LOG("glGetAttribLocation(\"aTexCoordinater\") = %d\n", textureCoordHandle);
-    glBindAttribLocation( shaderProgram, textureCoordHandle, "aPosition");
-    checkGlError("glBindAttribLocation");
-
 
     textureTranformHandle = glGetUniformLocation(shaderProgram, "texMatrix");
     checkGlError("glGetAttribLocation");
     LOG("glGetUniformLocation(\"vtexMatrix\") = %d\n", textureTranformHandle);
+
+
+    glEnableVertexAttribArray ( positionHandle );
+    glVertexAttribPointer ( positionHandle, 2, GL_FLOAT, false, 0, (const GLvoid *) offsetof( Vertices, squareCoords));
+
+    glEnableVertexAttribArray ( textureCoordHandle );
+    glVertexAttribPointer ( textureCoordHandle, 4, GL_FLOAT, false, 0, (const GLvoid *) offsetof( Vertices, textureCoords));
 
     width  = w;
     height = h;
 
     LOG_INFO("set meidia graphics success w: %d, h: %d", w, h);
 }
+
+void NativeMedia::createVideoGeometry() {
+
+    glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, indexBufer);
+    glBindVertexArray( 0 );
+
+    // vao
+    glGenVertexArrays( 1, &vao );
+    glBindVertexArray( vao );
+
+    // vertex vbo
+    glGenBuffers ( 1, &vetexBufferPositions);
+    glBindBuffer ( GL_ARRAY_BUFFER, vetexBufferPositions);
+    glBufferData ( GL_ARRAY_BUFFER, sizeof(videoVetices), &videoVetices, GL_STATIC_DRAW);
+
+    // ebo
+    glGenBuffers ( 1, &indexBufer);
+    glBindBuffer ( GL_ELEMENT_ARRAY_BUFFER, indexBufer);
+    glBufferData ( GL_ELEMENT_ARRAY_BUFFER, sizeof(drawOrder), &drawOrder, GL_STATIC_DRAW);
+
+}
+
 
 void NativeMedia::setFrameAvailable(bool const available) {
     pthread_mutex_lock(&gMutex);
@@ -279,10 +284,8 @@ void NativeMedia::renderFrame() {
 
     glViewport(0, 0, width, height);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear( GL_COLOR_BUFFER_BIT);
-
-
     checkGlError("glClearColor");
+
     glClear(GL_COLOR_BUFFER_BIT);
     checkGlError("glClear");
 
@@ -297,22 +300,27 @@ void NativeMedia::renderFrame() {
     glUniformMatrix4fv(textureTranformHandle, 1, GL_FALSE, texMatrix);
     checkGlError("texMatrix, glUniformMatrix4fv");
 
-    checkGlError("glUniform1i");
-
-    glBindVertexArray( vetexBufferObj );
+    glBindVertexArray( vao );
     checkGlError("glBindVertexArray");
 
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, (void *)0);
     checkGlError("glDrawElementsglDrawElements");
 
+    glBindBuffer ( GL_ARRAY_BUFFER, 0);
+    glBindVertexArray( 0 );
+
+    glUseProgram(0);
 }
 
 
 void NativeMedia::destroy() {
     LOG_INFO("native destroy");
+    glDeleteProgram(shaderProgram);
+
     glDeleteBuffers ( 1, &indexBufer);
     glDeleteBuffers ( 1, &vetexBufferPositions);
     glDeleteBuffers ( 1, &vetexBufferTextureCoords);
+    glDeleteVertexArrays(1, &vao);
 }
 
 JNIEnv *AttachJava()
@@ -416,7 +424,6 @@ JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeOnDestroy
 JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeSurfaceCreated(JNIEnv *env, jobject obj) {
     LOG_INFO("nativeSurfaceCreated");
     gNativeMedia->setupSurfaceTexture();
-    gNativeMedia->createVideoGeometry();
 }
 JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeSurfaceChanged(JNIEnv *env, jobject obj, jint width, jint height) {
     LOG_INFO("nativeSurfaceChanged");

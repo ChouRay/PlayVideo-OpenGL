@@ -133,7 +133,7 @@ public class TextureViewMediaActivity extends Activity implements TextureView.Su
 
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-        Log.v( TAG, "GLViewMediaActivity::onSurfaceTextureAvailable()" );
+        Log.v( TAG, "GLViewMediaActivity::onSurfaceTextureAvailable()"+ " tName:" + Thread.currentThread().getName() + "  tid:");
 
         surfaceWidth = width;
         surfaceHeight = height;
