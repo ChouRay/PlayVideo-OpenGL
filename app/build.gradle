@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 23
-    buildToolsVersion "23.0.2"
+    buildToolsVersion '25.0.1'
 
     defaultConfig {
         applicationId "com.example.jarry.playvideo_texuture"
@@ -25,9 +25,12 @@ android {
     }
 }
 
-
 project.afterEvaluate {
     printf("===============start ndk build======================\n")
+    if (GetNDKBuildCmd() == null) {
+        return;
+    }
+
     compileDebugNdk.dependsOn 'NDKBuildDebug'
     compileReleaseNdk.dependsOn 'NDKBuildRelease'
     clean.dependsOn 'NDKBuildClean'

@@ -12,7 +12,6 @@
 #include <GLES2/gl2.h>
 
 
-
 class NativeMedia {
 
 public:
@@ -36,7 +35,6 @@ public:
 
     void renderFrame();
     void setupGraphics(int w, int h);
-    void createVideoGeometry();
     void setFrameAvailable(bool const available);
 
     jobject getSurfaceTextureObject();
@@ -61,7 +59,7 @@ private:
     jmethodID updateTexImageMethodId;
     jmethodID getTimestampMethodId;
     jmethodID setDefaultBufferSizeMethodId;
-
+    jmethodID getTransformMtxId;
 };
 
 #endif //PLAYVIDEO_TEXUTURE_NATIVEVIDEO_H

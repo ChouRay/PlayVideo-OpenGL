@@ -7,7 +7,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.1.2'
+        classpath 'com.android.tools.build:gradle:2.2.2'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -20,6 +20,30 @@ allprojects {
     }
 }
 
+def existNdk() {
+    def ndkDir = System.getenv('ANDROID_NDK_HOME')
+    if( ndkDir == null )
+    {
+        ndkDir = System.getenv('ANDROID_NDK')
+    }
+    if( ndkDir == null )
+    {
+        ndkDir = System.getenv('NDKROOT')
+    }
+    if( ndkDir == null )
+    {
+        Properties properties = new Properties()
+        properties.load(project.rootProject.file('local.properties').newDataInputStream())
+        ndkDir = properties.getProperty('ndk.dir')
+    }
+//    if( ndkDir == null )
+//    {
+//        throw new GradleException('NDK not found! Check your environment for ANDROID_NDK or your local.properties contains ndk.dir')
+//    } else {
+//        return ndkdir;
+//    }
+    return ndkDir;
+}
 
 def GetNDKBuildCmd() {
 
@@ -38,9 +62,14 @@ def GetNDKBuildCmd() {
         properties.load(project.rootProject.file('local.properties').newDataInputStream())
         ndkDir = properties.getProperty('ndk.dir')
     }
-    if( ndkDir == null )
-    {
-        throw new GradleException('NDK not found! Check your environment for ANDROID_NDK or your local.properties contains ndk.dir')
+//    if( ndkDir == null )
+//    {
+//        throw new GradleException('NDK not found! Check your environment for ANDROID_NDK or your local.properties contains ndk.dir')
+//    }
+
+    if (ndkDir == null) {
+        printf("NDK not found! Check your environment for ANDROID_NDK or your local.properties contains ndk.dir")
+        return null;
     }
     if ( OperatingSystem.current().isWindows() ) {
         return ndkDir + '/ndk-build.cmd'
@@ -51,6 +80,10 @@ def GetNDKBuildCmd() {
 
 
 subprojects {
+
+    if (GetNDKBuildCmd() == null) {
+        return ;
+    }
 
     task printProjectName << {
         println rootProject.name

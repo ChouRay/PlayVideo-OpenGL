@@ -13,8 +13,14 @@ import java.io.IOException;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+/**
+ * NativeMediaActivity
+ *
+ * if you want to render movie rightly on this activity,
+ * you should set your environment for ANDROID_NDK or your local.properties contains ndk.dir
+ */
 public class NativeMediaActivity extends AppCompatActivity implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener{
-    public static final String videoPath = Environment.getExternalStorageDirectory().getPath()+"/one.mp4";
+    public static final String videoPath = Environment.getExternalStorageDirectory().getPath()+"/Movies/不将就.mp4";
 
     private SurfaceTexture videoTexture;
     private GLSurfaceView glView;

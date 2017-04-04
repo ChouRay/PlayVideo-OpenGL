@@ -33,7 +33,8 @@
         </activity>
         <activity android:name="com.example.jarry.NativeMediaActivity"
                   android:launchMode="singleTask"
-                  android:screenOrientation="landscape">
+                  android:screenOrientation="landscape"
+                  android:configChanges="screenSize|orientation|keyboardHidden|keyboard">
 
         </activity>
     </application>

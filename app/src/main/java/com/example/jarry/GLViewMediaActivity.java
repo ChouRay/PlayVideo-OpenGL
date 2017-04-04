@@ -28,7 +28,7 @@ import javax.microedition.khronos.opengles.GL10;
 
 public class GLViewMediaActivity extends AppCompatActivity implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener {
 
-    public static final String videoPath = Environment.getExternalStorageDirectory().getPath()+"/one.mp4";
+    public static final String videoPath = Environment.getExternalStorageDirectory().getPath()+"/Movies/不将就.mp4";
 
     private boolean frameAvailable = false;
     int textureParamHandle;
