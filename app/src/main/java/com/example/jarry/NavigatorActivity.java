@@ -37,7 +37,8 @@ public class NavigatorActivity extends AppCompatActivity implements View.OnClick
                 Toast.makeText(this, "Play Video on GLSurfaceView", Toast.LENGTH_SHORT).show();
                 break;
             case R.id.button_glsurface_view_native:
-                Toast.makeText(this, "Play Video on Native GLSurfaceView", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "prompt: this activity need to config ndk", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Play Video on Native", Toast.LENGTH_SHORT).show();
                 mIntent.setClass(this, NativeMediaActivity.class);
                 startActivity(mIntent);
                 break;

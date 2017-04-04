@@ -102,7 +102,7 @@ public class NativeMediaActivity extends AppCompatActivity implements GLSurfaceV
     @Override
     protected void onDestroy() {
         super.onDestroy();
-       // NativeMediaWrapper.nativeOnDestroy();
+        NativeMediaWrapper.nativeOnDestroy();
 
         if (mediaPlayer != null) {
             mediaPlayer.stop();
