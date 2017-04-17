@@ -90,11 +90,11 @@ subprojects {
     }
 
     task NDKBuildDebug(type: Exec) {
-        commandLine GetNDKBuildCmd(), 'V=0', '-j10', 'NDK_DEBUG=1'
+        commandLine GetNDKBuildCmd(), 'V=1', 'NDK_DEBUG=1'
     }
 
     task NDKBuildRelease(type: Exec) {
-        commandLine GetNDKBuildCmd(), 'V=0', '-j10', 'NDK_DEBUG=0'
+        commandLine GetNDKBuildCmd(), 'V=1', 'NDK_DEBUG=0'
     }
 
     task NDKBuildClean(type: Exec) {

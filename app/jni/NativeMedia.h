@@ -7,10 +7,10 @@
 
 #include <jni.h>
 #include <strings.h>
-
-#include <EGL/egl.h>
-#include <GLES2/gl2.h>
-
+#include <pthread.h>
+#include <android/log.h>
+#include <GLES3/gl3.h>
+#include <GLES2/gl2ext.h>
 
 class NativeMedia {
 

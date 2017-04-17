@@ -2,18 +2,6 @@
 // Created by Administrator on 2016/4/10 0010.
 //
 
-#include <stdint.h>
-#include <jni.h>
-#include <pthread.h>
-#include <android/log.h>
-
-#include <unistd.h>
-#include <android/native_window.h>
-#include <android/native_window_jni.h>
-#include <EGL/egl.h> // requires ndk r5 or newer
-#include <GLES3/gl3.h>
-#include <GLES2/gl2.h>
-#include <GLES2/gl2ext.h>
 #include "NativeMedia.h"
 
 #define LOG_TAG "NativeVideo"
@@ -21,7 +9,6 @@
 #define LOG_INFO(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOG_ERROR(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 #define LOG(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
-
 
 JavaVM *gJavaVM;
 NativeMedia *gNativeMedia;
@@ -33,8 +20,6 @@ static void checkGlError(const char *op) {
         LOG("after %s() glError (0x%x)\n", op, error);
     }
 }
-
-
 
 static const char gVertexShader[] =
         "attribute vec4 aPosition;\n"
@@ -401,7 +386,7 @@ void NativeMedia::SetDefaultBufferSizse(const int width, const int height) {
     jni->CallVoidMethod(javaSurfaceTextureObj, setDefaultBufferSizeMethodId, width, height);
 }
 
-static float videoTextureTransform[16] ={0};
+
 
 void NativeMedia::Update() {
     //latch the latest movie frame to the texture
@@ -410,7 +395,7 @@ void NativeMedia::Update() {
     }
     jni->CallVoidMethod(javaSurfaceTextureObj, updateTexImageMethodId);
     nanoTimeStamp = jni->CallLongMethod( javaSurfaceTextureObj, getTimestampMethodId);
-    LOG("+++++updateTexImage++++++textureId: %p, trans:%f w:%d, h: %d ", &texId, videoTextureTransform[0], width, height);
+    LOG("+++++updateTexImage++++++textureId: %p  w:%d, h: %d ", &texId,width, height);
 
 }
 

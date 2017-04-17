@@ -20,7 +20,8 @@ import javax.microedition.khronos.opengles.GL10;
  * you should set your environment for ANDROID_NDK or your local.properties contains ndk.dir
  */
 public class NativeMediaActivity extends AppCompatActivity implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener{
-    public static final String videoPath = Environment.getExternalStorageDirectory().getPath()+"/Movies/不将就.mp4";
+//    public static final String videoPath = Environment.getExternalStorageDirectory().getPath()+"/Movies/不将就.mp4";
+    public static final String videoPath = "http://www.w3school.com.cn/example/html5/mov_bbb.mp4";
 
     private SurfaceTexture videoTexture;
     private GLSurfaceView glView;
