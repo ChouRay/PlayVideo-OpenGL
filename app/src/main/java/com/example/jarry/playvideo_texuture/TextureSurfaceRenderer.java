@@ -155,7 +155,7 @@ public abstract class TextureSurfaceRenderer implements Runnable{
                 EGL10.EGL_GREEN_SIZE, 8,
                 EGL10.EGL_BLUE_SIZE, 8,
                 EGL10.EGL_ALPHA_SIZE, 8,
-                EGL10.EGL_DEPTH_SIZE, 16,
+                EGL10.EGL_DEPTH_SIZE, 16,			/*default depth buffer 16 choose a RGB_888 surface */
                 EGL10.EGL_STENCIL_SIZE, 0,
                 EGL10.EGL_NONE      //总是以EGL10.EGL_NONE结尾
         };
