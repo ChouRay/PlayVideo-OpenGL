@@ -4,6 +4,7 @@ import org.gradle.internal.os.OperatingSystem
 
 buildscript {
     repositories {
+        google()
         jcenter()
     }
     dependencies {
