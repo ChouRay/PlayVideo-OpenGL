@@ -3,8 +3,8 @@ package com.example.jarry;
 import android.graphics.SurfaceTexture;
 import android.media.MediaPlayer;
 import android.opengl.GLSurfaceView;
-import android.os.Environment;
-import android.support.v7.app.AppCompatActivity;
+
+import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Surface;
 
@@ -21,7 +21,7 @@ import javax.microedition.khronos.opengles.GL10;
  */
 public class NativeMediaActivity extends AppCompatActivity implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener{
 //    public static final String videoPath = Environment.getExternalStorageDirectory().getPath()+"/Movies/不将就.mp4";
-    public static final String videoPath = "http://www.w3school.com.cn/example/html5/mov_bbb.mp4";
+    public static final String videoPath = "https://www.w3school.com.cn/example/html5/mov_bbb.mp4";
 
     private SurfaceTexture videoTexture;
     private GLSurfaceView glView;

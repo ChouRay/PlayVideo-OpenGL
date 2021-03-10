@@ -18,7 +18,7 @@ public class TextureViewMediaActivity extends Activity implements TextureView.Su
     private static final String TAG = "GLViewMediaActivity";
 
 
-    public static final String videoPath = Environment.getExternalStorageDirectory().getPath()+"/Movies/不将就.mp4";
+    public static final String videoPath = "https://www.w3school.com.cn/example/html5/mov_bbb.mp4";
     private TextureView textureView;
     private MediaPlayer mediaPlayer;
 

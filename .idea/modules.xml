@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/PlayVideo-OpenGL.iml" filepath="$PROJECT_DIR$/PlayVideo-OpenGL.iml" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/PlayVideo-OpenGL.iml" filepath="$PROJECT_DIR$/.idea/modules/PlayVideo-OpenGL.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/PlayVideo-OpenGL.app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/PlayVideo-OpenGL.app.iml" />
     </modules>
   </component>
 </project>

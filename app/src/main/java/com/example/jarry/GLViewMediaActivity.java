@@ -8,7 +8,7 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
 import android.os.Environment;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Surface;
@@ -28,7 +28,7 @@ import javax.microedition.khronos.opengles.GL10;
 
 public class GLViewMediaActivity extends AppCompatActivity implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener {
 
-    public static final String videoPath = Environment.getExternalStorageDirectory().getPath()+"/Movies/不将就.mp4";
+    public static final String videoPath = "https://www.w3school.com.cn/example/html5/mov_bbb.mp4";
 
     private boolean frameAvailable = false;
     int textureParamHandle;

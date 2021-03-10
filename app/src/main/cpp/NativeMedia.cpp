@@ -1,7 +1,8 @@
 //
 // Created by Administrator on 2016/4/10 0010.
 //
-
+#include <jni.h>
+#include <malloc.h>
 #include "NativeMedia.h"
 
 #define LOG_TAG "NativeVideo"
@@ -347,7 +348,7 @@ void NativeMedia::setupSurfaceTexture() {
         LOG_ERROR("GetMethonID(<init>) failed");
     }
 
-    jobject  obj = jni->NewObject(surfaceTextureClass, constructor, texId);
+    jobject  obj = jni->NewObject(surfaceTextureClass, constructor, (jint) texId);
     if (obj == 0) {
         LOG_ERROR("NewObject() failed");
     }
@@ -400,18 +401,21 @@ void NativeMedia::Update() {
 }
 
 
-extern "C" {
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //                      java activity interface
 //////////////////////////////////////////////////////////////////////////////////////////
-JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeOnCreate(JNIEnv *env, jobject obj) {
+extern "C"
+JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeOnCreate(JNIEnv *env,
+                                                                                jclass obj) {
     LOG_INFO("nativeOnCreate");
     gNativeMedia = new NativeMedia();
     env->GetJavaVM(&gJavaVM);
 }
 
-JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeOnDestroy(JNIEnv *env, jobject obj) {
+extern "C"
+JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeOnDestroy(JNIEnv *env,
+                                                                                 jclass obj) {
     LOG_INFO("nativeOnCreate");
     gNativeMedia->destroy();
 }
@@ -419,16 +423,22 @@ JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeOnDestroy
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //                  java gl_surface_view renderer interface
 //////////////////////////////////////////////////////////////////////////////////////////////////
-JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeSurfaceCreated(JNIEnv *env, jobject obj) {
+extern "C"
+JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeSurfaceCreated(JNIEnv *env,
+                                                                                      jclass obj) {
     LOG_INFO("nativeSurfaceCreated");
     gNativeMedia->setupSurfaceTexture();
 }
-JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeSurfaceChanged(JNIEnv *env, jobject obj, jint width, jint height) {
+extern "C"
+JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeSurfaceChanged(JNIEnv *env,
+                                                                                      jclass obj, jint width, jint height) {
     LOG_INFO("nativeSurfaceChanged");
 
     gNativeMedia->setupGraphics(width, height);
 }
-JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeDrawFrame(JNIEnv *env, jobject obj) {
+extern "C"
+JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeDrawFrame(JNIEnv *env,
+                                                                                 jclass obj) {
 //    LOG_INFO("nativeDrawFrame");
     gNativeMedia->renderFrame();
 }
@@ -436,20 +446,22 @@ JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeDrawFrame
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //                  java SurfaceTexture interface
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeFrameAailable(JNIEnv *env, jobject obj) {
+extern "C"
+JNIEXPORT void JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeFrameAailable(JNIEnv *env,
+                                                                                     jclass obj) {
     LOG_INFO("nativeFrameAailable");
     gNativeMedia->setFrameAvailable(true);
 }
 
-JNIEXPORT jobject JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeGetSurfaceTexture(JNIEnv *env, jobject obj) {
+extern "C"
+JNIEXPORT jobject JNICALL Java_com_example_jarry_NativeMediaWrapper_nativeGetSurfaceTexture(JNIEnv *env,
+                                                                                            jclass obj) {
     LOG_INFO("nativeGetSurfaceTexture");
     jobject surfaceTextureObj;
     surfaceTextureObj = gNativeMedia->getSurfaceTextureObject();
 
     return surfaceTextureObj;
 }
-
-}       // end extern ""C
 
 
 
